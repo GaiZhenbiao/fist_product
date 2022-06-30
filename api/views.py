@@ -1,6 +1,7 @@
 from fileinput import filename
 from django.shortcuts import render
 from django.http import HttpResponse
+from py import process
 from .models import *
 import traceback
 
@@ -237,6 +238,27 @@ def handle_finish_procedure(request):
         context["message"] = "完成成功"
         context["status"] = 0
         context["procedure"] = procedure.to_dict()
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
+def handle_schedule_meeting(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        context["message"] = "没有该审批流程"
+        procedure = request.POST.get("procedure")
+        procedure = FistProcedure.objects.get(name=procedure)
+        context["message"] = "没有 location 信息"
+        location = request.POST.get("location")
+        context["message"] = "没有 start_time 信息"
+        start_time = request.POST.get("start_time")
+        context["message"] = "没有 end_time 信息"
+        end_time = request.POST.get("end_time")
+        procedure.location = location
+        procedure.start_time = start_time
+        procedure.end_time = end_time
+        procedure.save()
+        context["message"] = "安排会议成功"
     except:
         print(traceback.format_exc())
     return HttpResponse(json.dumps(context))

@@ -73,7 +73,9 @@ class FistProcedure(models.Model):
     content = models.TextField()
     stage = models.IntegerField(default=0)
     likes = models.IntegerField(default=0)
-    metting_time = models.DateTimeField(null=True)
+    meeting_start_time = models.DateTimeField(null=True)
+    meeting_end_time = models.DateTimeField(null=True)
+    meeting_location = models.CharField(max_length=255, blank=True)
     approved = models.BooleanField(default=False)
     finished = models.BooleanField(default=False)
     product = models.ForeignKey(Product, on_delete=models.DO_NOTHING, null=True)
@@ -92,7 +94,9 @@ class FistProcedure(models.Model):
             "files":  [file.to_dict() for file in UserUploadedFile.objects.filter(procedure=self)] if UserUploadedFile.objects.filter(procedure=self) else None,
             "comments": [comment.to_dict() for comment in Comment.objects.filter(procedure=self)] if Comment.objects.filter(procedure=self) else None,
             "likes": self.likes,
-            "metting_time": str(self.metting_time) if self.metting_time else None,
+            "meeting_start_time": str(self.meeting_start_time) if self.meeting_start_time else None,
+            "meeting_end_time": str(self.meeting_end_time) if self.meeting_end_time else None,
+            "meeting_location": self.meeting_location,
             "approved": self.approved,
             "product": self.product.to_dict()
         }

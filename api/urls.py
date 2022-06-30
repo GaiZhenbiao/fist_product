@@ -16,4 +16,5 @@ urlpatterns = [
     path('goto_stage', views.handle_goto_stage),
     path('comment_procedure', views.handle_comment_procedure),
     path('finish_procedure', views.handle_finish_procedure),
+    path('schedule_meeting', views.handle_schedule_meeting),
 ]
