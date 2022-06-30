@@ -17,25 +17,9 @@ def zip_files(files):
     return outfile.getvalue()
 
 def handle_uploaded_file(file):
-    with open(f'sources/{file.name}', 'wb+') as destination:
+    with open(f'files/{file.name}', 'wb+') as destination:
         for chunk in file.chunks():
             destination.write(chunk)
-
-def handle_upload(request):
-    context = {"message": "上传失败TAT"}
-    print(request.FILES)
-    file = request.FILES["file"]
-    user = request.POST.get("user")
-    user = User.objects.get(name=user)
-    procedure = request.POST.get("procedure")
-    procedure = FistProcedure.objects.get(name=procedure)
-    if request.method == 'POST':
-        record = UserUploadedFile(
-            name=file.name, file=f"files/{file.name}", procedure=procedure, user=user)
-        record.save()
-        handle_uploaded_file(file)
-        context['message'] = "上传成功^_^"
-    return HttpResponse(json.dumps(context))
 
 def handle_login(request):
     context = {"message": "未知错误", "status": 1}
@@ -59,16 +43,15 @@ def handle_login(request):
 
 def handle_find_product(request):
     context = {"message": "未知错误", "status": 1}
-    name = request.POST.get("name")
+    id = int(request.POST.get("id"))
     try:
         context["message"] = "没有该商品"
-        product = Product.objects.get(name=name)
+        product = Product.objects.get(pk=id)
         context["message"] = "查询成功"
         context["status"] = 0
         context["product"] = product.to_dict()
     except:
         print(traceback.format_exc())
-    print(context)
     return HttpResponse(json.dumps(context))
 
 def handle_modify_product(request):
@@ -83,14 +66,17 @@ def handle_modify_product(request):
         context["message"] = "没有该商品"
         try:
             product = Product.objects.get(name=name)
+            context["mode"] = "modify"
         except:
             product = Product(name=name)
+            context["mode"] = "create"
         product.price = price
         product.description = description
         product.category = category
         product.stock = stock
         product.sold = sold
         product.save()
+        context["id"] = product.id
         context["message"] = "修改成功"
         context["status"] = 0
     except:
@@ -111,10 +97,10 @@ def handle_get_all_products(request):
 
 def handle_delete_product(request):
     context = {"message": "未知错误", "status": 1}
-    name = request.POST.get("name")
+    id = request.POST.get("id")
     try:
         context["message"] = "没有该商品"
-        product = Product.objects.get(name=name)
+        product = Product.objects.get(pk=id)
         product.delete()
         context["message"] = "删除成功"
         context["status"] = 0
@@ -131,12 +117,13 @@ def handle_create_procecure(request):
         context["message"] = "没有该用户"
         user = User.objects.get(name=user)
         content = request.POST.get("content")
-        product = request.POST.get("product")
+        product = int(request.POST.get("product"))
         context["message"] = "没有该商品"
-        product = Product.objects.get(name=product)
+        product = Product.objects.get(pk=product)
         procedure = FistProcedure(name=name, user=user, content=content, product=product)
         context["message"] = "保存失败"
         procedure.save()
+        context["id"] = procedure.id
         context["message"] = "创建成功"
         context["status"] = 0
     except:
@@ -145,11 +132,16 @@ def handle_create_procecure(request):
 
 def handle_like_procedure(request):
     context = {"message": "未知错误", "status": 1}
-    name = request.POST.get("name")
     try:
         context["message"] = "没有该工序"
-        procedure = FistProcedure.objects.get(name=name)
-        procedure.likes += 1
+        procedure = int(request.POST.get("procedure"))
+        procedure = FistProcedure.objects.get(pk=procedure)
+        context["message"] = "没有该用户"
+        user = request.POST.get("token")
+        user = User.objects.get(token=user)
+        context["message"] = "点赞/取消赞时失败"
+        procedure.alter_like(user)
+        context["likes"] = procedure.likes
         procedure.save()
         context["message"] = "点赞成功"
         context["status"] = 0
@@ -159,10 +151,10 @@ def handle_like_procedure(request):
 
 def handle_find_procedure(request):
     context = {"message": "未知错误", "status": 1}
-    name = request.POST.get("name")
+    id = int(request.POST.get("id"))
     try:
         context["message"] = "没有该工序"
-        procedure = FistProcedure.objects.get(name=name)
+        procedure = FistProcedure.objects.get(pk=id)
         context["message"] = "查询成功"
         context["status"] = 0
         context["procedure"] = procedure.to_dict()
@@ -182,13 +174,39 @@ def handle_get_all_procedures(request):
         print(traceback.format_exc())
     return HttpResponse(json.dumps(context))
 
+def handle_upload(request):
+    context = {"message": "上传失败TAT"}
+    try:
+        print(request.FILES)
+        context["message"] = "没有文件"
+        file = request.FILES["file"]
+        context["message"] = "找不到用户"
+        user = request.POST.get("token")
+        user = User.objects.get(token=user)
+        context["message"] = "没有指定名称"
+        name = request.POST.get("name")
+        procedure = int(request.POST.get("procedure"))
+        procedure = FistProcedure.objects.get(pk=procedure)
+        context["message"] = "保存失败"
+        if request.method == 'POST':
+            record = UserUploadedFile(
+                name=name, file=f"files/{file.name}", procedure=procedure, user=user)
+            record.save()
+            handle_uploaded_file(file)
+            context['message'] = "上传成功^_^"
+        else:
+            context['message'] = "上传失败TAT（奇怪的错误增加了！）"
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
 def handle_goto_stage(request):
     context = {"message": "未知错误", "status": 1}
-    name = request.POST.get("name")
+    id = int(request.POST.get("id"))
     stage = request.POST.get("stage")
     try:
         context["message"] = "没有该工序"
-        procedure = FistProcedure.objects.get(name=name)
+        procedure = FistProcedure.objects.get(pk=id)
         context["message"] = "跳转成功"
         context["stage"] = int(stage)
         context["status"] = 0
@@ -201,17 +219,17 @@ def handle_goto_stage(request):
 def handle_comment_procedure(request):
     context = {"message": "未知错误", "status": 1}
     try:
-        procedure = request.POST.get("name")
         context["message"] = "没有该流程"
-        procedure = FistProcedure.objects.get(name=procedure)
+        procedure = int(request.POST.get("procedure"))
+        procedure = FistProcedure.objects.get(pk=procedure)
         title = request.POST.get("title")
         content = request.POST.get("content")
         agree = request.POST.get("agree")
         context["message"] = "非布尔型"
         agree = bool(agree)
-        user = request.POST.get("user")
         context["message"] = "没有该用户"
-        user = User.objects.get(name=user)
+        user = request.POST.get("token")
+        user = User.objects.get(token=user)
         context["message"] = "评论创建失败"
         comment = Comment(title=title, content=content, agree=agree, user=user, procedure=procedure)
         comment.save()
@@ -228,9 +246,9 @@ def handle_finish_procedure(request):
     context = {"message": "未知错误", "status": 1}
     fist = request.POST.get("fist")
     try:
-        procedure = request.POST.get("name")
         context["message"] = "没有该流程"
-        procedure = FistProcedure.objects.get(name=procedure)
+        procedure = int(request.POST.get("id"))
+        procedure = FistProcedure.objects.get(pk=procedure)
         procedure.finished = True
         procedure.product.fist = bool(fist)
         procedure.product.save()
@@ -242,12 +260,27 @@ def handle_finish_procedure(request):
         print(traceback.format_exc())
     return HttpResponse(json.dumps(context))
 
+def handle_set_as_approved(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        context["message"] = "没有该流程"
+        procedure = int(request.POST.get("id"))
+        procedure = FistProcedure.objects.get(pk=procedure)
+        procedure.approved = True
+        procedure.save()
+        context["message"] = "设置成功"
+        context["status"] = 0
+        context["procedure"] = procedure.to_dict()
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
 def handle_schedule_meeting(request):
     context = {"message": "未知错误", "status": 1}
     try:
         context["message"] = "没有该审批流程"
-        procedure = request.POST.get("procedure")
-        procedure = FistProcedure.objects.get(name=procedure)
+        procedure = int(request.POST.get("id"))
+        procedure = FistProcedure.objects.get(pk=procedure)
         context["message"] = "没有 location 信息"
         location = request.POST.get("location")
         context["message"] = "没有 start_time 信息"
@@ -259,6 +292,43 @@ def handle_schedule_meeting(request):
         procedure.end_time = end_time
         procedure.save()
         context["message"] = "安排会议成功"
+        context["status"] = 0
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
+def handle_add_news(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        context["message"] = "没有填写标题"
+        title = request.POST.get("title")
+        context["message"] = "没有填写内容"
+        content = request.POST.get("content")
+        context["message"] = "没有填写链接"
+        link = request.POST.get("link")
+        context["message"] = "没有该产品"
+        product = int(request.POST.get("product"))
+        product = Product.objects.get(pk=product)
+        context["message"] = "没有该用户"
+        token = request.POST.get("token")
+        author = User.objects.get(token=token)
+        news = News(title=title, content=content, product=product, author=author)
+        news.save()
+        context["message"] = "添加成功"
+        context["status"] = 0
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
+def handle_delete_news(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        context["message"] = "没有该新闻"
+        news = int(request.POST.get("id"))
+        news = News.objects.get(pk=news)
+        news.delete()
+        context["message"] = "删除成功"
+        context["status"] = 0
     except:
         print(traceback.format_exc())
     return HttpResponse(json.dumps(context))

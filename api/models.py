@@ -64,7 +64,9 @@ class Product(models.Model):
             "category": self.category,
             "stock": self.stock,
             "sold": self.sold,
-            "fist": self.fist
+            "fist": self.fist,
+            "news": [n.to_dict() for n in self.news_set.all().order_by('-time')],
+            "id": self.id
         }
 
 class FistProcedure(models.Model):
@@ -73,6 +75,7 @@ class FistProcedure(models.Model):
     content = models.TextField()
     stage = models.IntegerField(default=0)
     likes = models.IntegerField(default=0)
+    likers = models.CharField(max_length=255, blank=True)
     meeting_start_time = models.DateTimeField(null=True)
     meeting_end_time = models.DateTimeField(null=True)
     meeting_location = models.CharField(max_length=255, blank=True)
@@ -86,6 +89,22 @@ class FistProcedure(models.Model):
     def related_files(self):
         return UserUploadedFile.objects.filter(procedure=self)
 
+    def alter_like(self, user):
+        assert isinstance(user, User)
+        if self.likers != '':
+            likers = [int(i) for i in self.likers.split(',')]
+        else:
+            likers = []
+        if user.id in likers:
+            # cancel like
+            likers.remove(user.id)
+            self.likes -= 1
+        else:
+            # like
+            likers.append(user.id)
+            self.likes += 1
+        self.likers = ','.join([str(i) for i in likers])
+
     def to_dict(self):
         return {
             "name": self.name,
@@ -98,13 +117,14 @@ class FistProcedure(models.Model):
             "meeting_end_time": str(self.meeting_end_time) if self.meeting_end_time else None,
             "meeting_location": self.meeting_location,
             "approved": self.approved,
-            "product": self.product.to_dict()
+            "product": self.product.to_dict(),
+            "id": self.id
         }
 
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
-    procedure = models.ForeignKey(FistProcedure, on_delete=models.DO_NOTHING)
+    procedure = models.ForeignKey(FistProcedure, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     content = models.TextField()
     time = models.DateTimeField(auto_now_add=True)
@@ -119,12 +139,14 @@ class Comment(models.Model):
             "procedure": self.procedure.name,
             "title": self.title,
             "content": self.content,
-            "time": str(self.time)
+            "time": str(self.time),
+            "id": self.id,
         }
 
 class UserUploadedFile(models.Model):
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
-    procedure =  models.ForeignKey(FistProcedure, on_delete=models.DO_NOTHING)
+    procedure =  models.ForeignKey(FistProcedure, on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
     file = models.FileField(upload_to='files/')
 
     def __str__(self):
@@ -134,5 +156,58 @@ class UserUploadedFile(models.Model):
         return {
             "user": self.user.name,
             "procedure": self.procedure.name,
-            "file": self.file.url
+            "name": self.name,
+            "file": self.file.url,
+            "id": self.id
+        }
+
+class News(models.Model):
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    time = models.DateTimeField(auto_now_add=True)
+    author = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    link = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return self.title
+
+    def to_dict(self):
+        return {
+            "title": self.title,
+            "content": self.content,
+            "product": self.product.name,
+            "time": str(self.time),
+            "author": self.author.name,
+            "link": self.link,
+            "id": self.id
+        }
+
+class Graph(models.Model):
+    title = models.CharField(max_length=255)
+    xs = models.CharField(max_length=1024)
+    ys = models.CharField(max_length=1024)
+    time = models.DateTimeField(auto_now_add=True)
+    type = models.IntegerField(default=0)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+
+    def to_dict(self):
+        if self.xs != '':
+            xs = [float(i) for i in self.xs.split(',')]
+        else:
+            xs = []
+        if self.ys != '':
+            ys = self.ys.split(',')
+        else:
+            ys = []
+        return {
+            "title": self.title,
+            "xs": xs,
+            "ys": ys,
+            "time": str(self.time),
+            "type": self.type,
+            "id": self.id
         }
