@@ -20,4 +20,8 @@ urlpatterns = [
     path('schedule_meeting', views.handle_schedule_meeting),
     path('add_news', views.handle_add_news),
     path('delete_news', views.handle_delete_news),
+    path('cancel_fist', views.handle_cancel_fist),
+    path('modify_graph', views.handle_modify_graph),
+    path('delete_graph', views.handle_delete_graph),
+    path('calculate_grade', views.handle_calculate_grade),
 ]

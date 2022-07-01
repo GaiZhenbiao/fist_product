@@ -20,6 +20,7 @@ class User(models.Model):
     passwd = models.CharField(max_length=255)
     two_auth = models.CharField(max_length=32, blank=True)
     token = models.CharField(max_length=255, blank=True)
+    weight = models.FloatField(default=1.0)
     is_admin = models.BooleanField(default=False)
 
     def get_token(self, passwd, two_auth_code):
@@ -51,6 +52,8 @@ class Product(models.Model):
     stock = models.IntegerField()
     sold = models.IntegerField()
     fist = models.BooleanField(default=False)
+    date = models.DateTimeField(auto_now_add=True)
+    grade = models.IntegerField(default=0) # 拳头产品分级，95分以上优秀，85分以上良好，60分以上一般，低于60分不及格
 
     def __str__(self):
         return self.name
@@ -66,7 +69,8 @@ class Product(models.Model):
             "sold": self.sold,
             "fist": self.fist,
             "news": [n.to_dict() for n in self.news_set.all().order_by('-time')],
-            "id": self.id
+            "id": self.id,
+            "graphs": [g.to_dict() for g in self.graph_set.all().order_by('-time')],
         }
 
 class FistProcedure(models.Model):
@@ -74,7 +78,7 @@ class FistProcedure(models.Model):
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     content = models.TextField()
     stage = models.IntegerField(default=0)
-    likes = models.IntegerField(default=0)
+    likes = models.IntegerField(default=0) # 多于5票进入下一个阶段
     likers = models.CharField(max_length=255, blank=True)
     meeting_start_time = models.DateTimeField(null=True)
     meeting_end_time = models.DateTimeField(null=True)
@@ -128,7 +132,11 @@ class Comment(models.Model):
     title = models.CharField(max_length=255)
     content = models.TextField()
     time = models.DateTimeField(auto_now_add=True)
-    agree = models.BooleanField(default=False)
+    # ratings
+    profitable = models.FloatField(default=0.0) # 目前的可盈利性，和下面三个一样都是10分制
+    future_proof = models.FloatField(default=0.0) # 市场前景
+    market = models.FloatField(default=0.0) # 市场化程度
+    branding = models.FloatField(default=0.0) # 品牌影响
 
     def __str__(self):
         return str(self.user) + ": “"+ self.content[:10] + "“"
@@ -141,7 +149,14 @@ class Comment(models.Model):
             "content": self.content,
             "time": str(self.time),
             "id": self.id,
+            "profitable": self.profitable,
+            "future_proof": self.future_proof,
+            "market": self.market,
+            "branding": self.branding
         }
+
+    def grade(self):
+        return (self.profitable + self.future_proof + self.market + self.branding) / 4
 
 class UserUploadedFile(models.Model):
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
@@ -185,10 +200,10 @@ class News(models.Model):
 
 class Graph(models.Model):
     title = models.CharField(max_length=255)
-    xs = models.CharField(max_length=1024)
+    xs = models.CharField(max_length=1024) # 和 ys 都是逗号分隔格式
     ys = models.CharField(max_length=1024)
     time = models.DateTimeField(auto_now_add=True)
-    type = models.IntegerField(default=0)
+    type = models.IntegerField(default=0) # 0: 经营额；1: 合同数；3：外省经营额
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
 
     def __str__(self):

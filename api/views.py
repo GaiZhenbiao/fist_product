@@ -1,6 +1,7 @@
 from fileinput import filename
 from django.shortcuts import render
 from django.http import HttpResponse
+from numpy import average
 from py import process
 from .models import *
 import traceback
@@ -260,6 +261,21 @@ def handle_finish_procedure(request):
         print(traceback.format_exc())
     return HttpResponse(json.dumps(context))
 
+def handle_cancel_fist(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        context["message"] = "没有该产品"
+        product = int(request.POST.get("id"))
+        product = Product.objects.get(pk=product)
+        context["message"] = "取消失败"
+        product.fist = False
+        product.save()
+        context["message"] = "取消成功"
+        context["status"] = 0
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
 def handle_set_as_approved(request):
     context = {"message": "未知错误", "status": 1}
     try:
@@ -372,6 +388,38 @@ def handle_delete_graph(request):
         graph = Graph.objects.get(pk=graph)
         graph.delete()
         context["message"] = "删除成功"
+        context["status"] = 0
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))\
+
+def handle_calculate_grade(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        context["message"] = "流程不存在"
+        procedure = int(request.POST.get("id"))
+        procedure = FistProcedure.objects.get(pk=procedure)
+        context["message"] = "评委数量不足"
+        likers = procedure.likers.split(",")
+        likers = [int(i) for i in likers]
+        likers = User.objects.filter(pk__in=likers)
+        assert len(likers) >= 5
+        context["message"] = "评委们没有都给出评分"
+        assert len(likers) == procedure.likes
+        context["message"] = "寻找评论时出错"
+        comments = Comment.objects.filter(user__in=likers)
+        context["message"] = "计算得分时出错"
+        avg_grade = 0
+        for comment in comments:
+            avg_grade += comment.grade * comment.user.weight
+        avg_grade /= procedure.likes
+        avg_grade = min(avg_grade, 10)
+        avg_grade *= 10
+        product = procedure.product
+        product.grade = avg_grade
+        product.save()
+        context["grade"] = avg_grade
+        context["message"] = "计算得分成功"
         context["status"] = 0
     except:
         print(traceback.format_exc())
