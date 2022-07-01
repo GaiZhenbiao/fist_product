@@ -332,3 +332,47 @@ def handle_delete_news(request):
     except:
         print(traceback.format_exc())
     return HttpResponse(json.dumps(context))
+
+def handle_modify_graph(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        context["message"] = "没有填写标题"
+        title = request.POST.get("title")
+        context["message"] = "没有填写 xs 信息"
+        xs = request.POST.get("xs")
+        context["message"] = "没有填写 ys 信息"
+        ys = request.POST.get("ys")
+        context["message"] = "没有填写 type 信息"
+        type = request.POST.get("type")
+        context["message"] = "没有填写 product 信息"
+        product = int(request.POST.get("product"))
+        product = Product.objects.get(pk=product)
+        if request.POST.get("id"):
+            graph = int(request.POST.get("id"))
+            graph = Graph.objects.get(pk=graph)
+            graph.title = title
+            graph.xs = xs
+            graph.ys = ys
+            graph.type = type
+            graph.product = product
+        else:
+            graph = Graph(title=title, xs=xs, ys=ys, type=type, product=product)
+        graph.save()
+        context["message"] = "添加成功"
+        context["status"] = 0
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
+def handle_delete_graph(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        context["message"] = "没有该图表"
+        graph = int(request.POST.get("id"))
+        graph = Graph.objects.get(pk=graph)
+        graph.delete()
+        context["message"] = "删除成功"
+        context["status"] = 0
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
