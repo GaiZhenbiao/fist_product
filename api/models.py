@@ -134,6 +134,7 @@ class FistProcedure(models.Model):
             "id": self.id,
             "finished": self.finished,
             "user": self.user.name,
+            "userid": self.user.id
         }
 
 
