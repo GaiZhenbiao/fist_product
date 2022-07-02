@@ -103,15 +103,19 @@ class FistProcedure(models.Model):
             likers = [int(i) for i in self.likers.split(',')]
         else:
             likers = []
+        flag = None
         if user.id in likers:
             # cancel like
             likers.remove(user.id)
             self.likes -= 1
+            flag = False
         else:
             # like
             likers.append(user.id)
             self.likes += 1
+            flag = True
         self.likers = ','.join([str(i) for i in likers])
+        return flag
 
     def to_dict(self):
         return {
@@ -129,6 +133,7 @@ class FistProcedure(models.Model):
             "product": self.product.to_dict(),
             "id": self.id,
             "finished": self.finished,
+            "user": self.user.name,
         }
 
 

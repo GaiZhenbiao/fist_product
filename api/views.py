@@ -145,11 +145,11 @@ def handle_like_procedure(request):
         context["message"] = "没有该用户"
         user = request.POST.get("token")
         user = User.objects.get(token=user)
-        context["message"] = "点赞/取消赞时失败"
+        context["message"] = "加入评审团/退出评审团时失败"
         procedure.alter_like(user)
         context["likes"] = procedure.likes
         procedure.save()
-        context["message"] = "点赞成功"
+        context["message"] = "成功"
         context["status"] = 0
     except:
         print(traceback.format_exc())
