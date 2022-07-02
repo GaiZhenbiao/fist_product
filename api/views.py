@@ -65,12 +65,12 @@ def handle_modify_product(request):
     sold = request.POST.get("sold")
     try:
         context["message"] = "没有该商品"
-        try:
-            product = Product.objects.get(name=name)
-            context["mode"] = "modify"
-        except:
-            product = Product(name=name)
-            context["mode"] = "create"
+        id = request.POST.get("id")
+        if id:
+            product = Product.objects.get(pk=int(id))
+        else:
+            product = Product()
+        product.name = name
         product.price = price
         product.description = description
         product.category = category
@@ -116,7 +116,7 @@ def handle_create_procecure(request):
         name = request.POST.get("name")
         user = request.POST.get("user")
         context["message"] = "没有该用户"
-        user = User.objects.get(name=user)
+        user = User.objects.get(token=user)
         content = request.POST.get("content")
         product = int(request.POST.get("product"))
         context["message"] = "没有该商品"
@@ -225,14 +225,28 @@ def handle_comment_procedure(request):
         procedure = FistProcedure.objects.get(pk=procedure)
         title = request.POST.get("title")
         content = request.POST.get("content")
-        agree = request.POST.get("agree")
-        context["message"] = "非布尔型"
-        agree = bool(agree)
+        context["message"] = "可盈利性未填写"
+        profitable = int(request.POST.get("profitable"))
+        context["message"] = "市场前景"
+        future_proof = request.POST.get("future_proof")
+        context["message"] = "市场化程度"
+        market = int(request.POST.get("market"))
+        context["message"] = "品牌影响"
+        branding = request.POST.get("branding")
         context["message"] = "没有该用户"
         user = request.POST.get("token")
         user = User.objects.get(token=user)
         context["message"] = "评论创建失败"
-        comment = Comment(title=title, content=content, agree=agree, user=user, procedure=procedure)
+        comment = Comment(
+            title=title,
+            content=content,
+            profitable=profitable,
+            future_proof=future_proof,
+            market=market,
+            branding=branding,
+            user=user,
+            procedure=procedure
+        )
         comment.save()
         context["message"] = "评论成功"
         context["status"] = 0
@@ -330,6 +344,7 @@ def handle_add_news(request):
         author = User.objects.get(token=token)
         news = News(title=title, content=content, product=product, author=author)
         news.save()
+        context["id"] = news.id
         context["message"] = "添加成功"
         context["status"] = 0
     except:

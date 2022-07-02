@@ -71,6 +71,7 @@ class Product(models.Model):
             "news": [n.to_dict() for n in self.news_set.all().order_by('-time')],
             "id": self.id,
             "graphs": [g.to_dict() for g in self.graph_set.all().order_by('-time')],
+            "grade":  self.grade
         }
 
 class FistProcedure(models.Model):
@@ -117,6 +118,7 @@ class FistProcedure(models.Model):
             "files":  [file.to_dict() for file in UserUploadedFile.objects.filter(procedure=self)] if UserUploadedFile.objects.filter(procedure=self) else None,
             "comments": [comment.to_dict() for comment in Comment.objects.filter(procedure=self)] if Comment.objects.filter(procedure=self) else None,
             "likes": self.likes,
+            "likers": [User.objects.get(pk=int(i)).name for i in self.likers.split(',')] if self.likers != '' else [],
             "meeting_start_time": str(self.meeting_start_time) if self.meeting_start_time else None,
             "meeting_end_time": str(self.meeting_end_time) if self.meeting_end_time else None,
             "meeting_location": self.meeting_location,
