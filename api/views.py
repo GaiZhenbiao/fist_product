@@ -36,6 +36,7 @@ def handle_login(request):
         context["token"] = token
         context["is_admin"] = user.is_admin
         context["username"] = username
+        context["id"] = user.id
         context["message"] = "登录成功"
         context["status"] = 0
     except:
@@ -259,12 +260,13 @@ def handle_comment_procedure(request):
 
 def handle_finish_procedure(request):
     context = {"message": "未知错误", "status": 1}
-    fist = request.POST.get("fist")
     try:
         context["message"] = "没有该流程"
         procedure = int(request.POST.get("id"))
         procedure = FistProcedure.objects.get(pk=procedure)
         procedure.finished = True
+        context["message"] = "没说是不是拳头产品"
+        fist = request.POST.get("fist")
         procedure.product.fist = bool(fist)
         procedure.product.save()
         procedure.save()
@@ -431,6 +433,10 @@ def handle_calculate_grade(request):
         avg_grade = min(avg_grade, 10)
         avg_grade *= 10
         product = procedure.product
+        if avg_grade >= 60:
+            product.fist = True
+        else:
+            product.fist = False
         product.grade = avg_grade
         product.save()
         context["grade"] = avg_grade

@@ -53,6 +53,7 @@ class Product(models.Model):
     sold = models.IntegerField()
     fist = models.BooleanField(default=False)
     date = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     grade = models.IntegerField(default=0) # 拳头产品分级，95分以上优秀，85分以上良好，60分以上一般，低于60分不及格
 
     def __str__(self):
@@ -71,7 +72,9 @@ class Product(models.Model):
             "news": [n.to_dict() for n in self.news_set.all().order_by('-time')],
             "id": self.id,
             "graphs": [g.to_dict() for g in self.graph_set.all().order_by('-time')],
-            "grade":  self.grade
+            "grade":  self.grade,
+            "prize": self.grade * 100 * 2.6,
+            "user": self.user.id,
         }
 
 class FistProcedure(models.Model):
@@ -124,7 +127,8 @@ class FistProcedure(models.Model):
             "meeting_location": self.meeting_location,
             "approved": self.approved,
             "product": self.product.to_dict(),
-            "id": self.id
+            "id": self.id,
+            "finished": self.finished,
         }
 
 
