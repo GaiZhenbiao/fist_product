@@ -64,9 +64,12 @@ def handle_modify_product(request):
     category = request.POST.get("category")
     stock = request.POST.get("stock")
     sold = request.POST.get("sold")
+    user = request.POST.get("token")
     try:
         context["message"] = "没有该商品"
         id = request.POST.get("id")
+        context["message"] = "找不到用户"
+        user = User.objects.get(token=user)
         if id:
             product = Product.objects.get(pk=int(id))
         else:
