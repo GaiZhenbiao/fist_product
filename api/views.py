@@ -72,8 +72,10 @@ def handle_modify_product(request):
         user = User.objects.get(token=user)
         if id:
             product = Product.objects.get(pk=int(id))
+            context["message"] = "修改成功"
         else:
             product = Product()
+            context["message"] = "创建成功"
         product.name = name
         product.price = price
         product.description = description
@@ -82,7 +84,6 @@ def handle_modify_product(request):
         product.sold = sold
         product.save()
         context["id"] = product.id
-        context["message"] = "修改成功"
         context["status"] = 0
     except:
         print(traceback.format_exc())
