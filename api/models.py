@@ -130,7 +130,7 @@ class FistProcedure(models.Model):
             "meeting_end_time": str(self.meeting_end_time) if self.meeting_end_time else None,
             "meeting_location": self.meeting_location,
             "approved": self.approved,
-            "product": self.product.to_dict(),
+            "product": self.product.id,
             "id": self.id,
             "finished": self.finished,
             "user": self.user.name,
@@ -213,7 +213,7 @@ class News(models.Model):
 class Graph(models.Model):
     title = models.CharField(max_length=255)
     xs = models.CharField(max_length=1024) # 和 ys 都是逗号分隔格式
-    ys = models.CharField(max_length=1024)
+    ys = models.CharField(max_length=1024, default="2022年第1季度,2022年第2季度,2022年第3季度,2022年第4季度")
     time = models.DateTimeField(auto_now_add=True)
     type = models.IntegerField(default=0) # 0: 经营额；1: 合同数；3：外省经营额
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
