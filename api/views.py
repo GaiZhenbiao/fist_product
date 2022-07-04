@@ -214,6 +214,7 @@ def handle_goto_stage(request):
         context["message"] = "没有该工序"
         procedure = FistProcedure.objects.get(pk=id)
         context["message"] = "跳转成功"
+        procedure.stage = int(stage)
         context["stage"] = int(stage)
         context["status"] = 0
         procedure.save()
@@ -323,9 +324,9 @@ def handle_schedule_meeting(request):
         start_time = request.POST.get("start_time")
         context["message"] = "没有 end_time 信息"
         end_time = request.POST.get("end_time")
-        procedure.location = location
-        procedure.start_time = start_time
-        procedure.end_time = end_time
+        procedure.meeting_location = location
+        procedure.meeting_start_time = start_time
+        procedure.meeting_end_time = end_time
         procedure.save()
         context["message"] = "安排会议成功"
         context["status"] = 0
