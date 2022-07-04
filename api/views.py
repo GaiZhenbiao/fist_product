@@ -43,6 +43,38 @@ def handle_login(request):
         pass
     return HttpResponse(json.dumps(context))
 
+def handle_get_commented(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        token = request.POST.get("token")
+        context["message"] = "没有该用户"
+        user = User.objects.get(token=token)
+        context["commented"] = user.get_commented()
+        context["message"] = "查询成功"
+        context["status"] = 0
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
+def handle_is_commented(request):
+    context = {"message": "未知错误", "status": 1}
+    try:
+        token = request.POST.get("token")
+        context["message"] = "没有该用户"
+        user = User.objects.get(token=token)
+        commented = user.get_commented()
+        procedure = FistProcedure.objects.get(id=request.POST.get("procedure_id"))
+        if procedure in commented:
+            context["message"] = "已经评论过了"
+            context["flag"] = 0
+        else:
+            context["message"] = "没有评论过"
+            context["flag"] = 1
+        context["status"] = 0
+    except:
+        print(traceback.format_exc())
+    return HttpResponse(json.dumps(context))
+
 def handle_find_product(request):
     context = {"message": "未知错误", "status": 1}
     id = int(request.POST.get("id"))
@@ -229,35 +261,7 @@ def handle_comment_procedure(request):
         context["message"] = "没有该流程"
         procedure = int(request.POST.get("procedure"))
         procedure = FistProcedure.objects.get(pk=procedure)
-        title = request.POST.get("title")
-        content = request.POST.get("content")
-        context["message"] = "可盈利性未填写"
-        profitable = int(request.POST.get("profitable"))
-        context["message"] = "市场前景"
-        future_proof = request.POST.get("future_proof")
-        context["message"] = "市场化程度"
-        market = int(request.POST.get("market"))
-        context["message"] = "品牌影响"
-        branding = request.POST.get("branding")
-        context["message"] = "没有该用户"
-        user = request.POST.get("token")
-        user = User.objects.get(token=user)
-        context["message"] = "评论创建失败"
-        comment = Comment(
-            title=title,
-            content=content,
-            profitable=profitable,
-            future_proof=future_proof,
-            market=market,
-            branding=branding,
-            user=user,
-            procedure=procedure
-        )
-        comment.save()
-        context["message"] = "评论成功"
-        context["status"] = 0
-        procedure.save()
-        context["procedure"] = procedure.to_dict()
+        context = procedure.comment(request.POST)
     except:
         print(traceback.format_exc())
     return HttpResponse(json.dumps(context))

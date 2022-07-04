@@ -16,6 +16,8 @@ urlpatterns = [
     path('goto_stage', views.handle_goto_stage),
     path('set_as_approved', views.handle_set_as_approved),
     path('comment_procedure', views.handle_comment_procedure),
+    path('is_commented', views.handle_is_commented),
+    path('get_commented', views.handle_get_commented),
     path('finish_procedure', views.handle_finish_procedure),
     path('schedule_meeting', views.handle_schedule_meeting),
     path('add_news', views.handle_add_news),

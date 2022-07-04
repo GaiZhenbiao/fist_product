@@ -22,6 +22,7 @@ class User(models.Model):
     token = models.CharField(max_length=255, blank=True)
     weight = models.FloatField(default=1.0)
     is_admin = models.BooleanField(default=False)
+    commented = models.CharField(max_length=255, blank=True)
 
     def get_token(self, passwd, two_auth_code):
         # compare self.passwd with the hashed passwd
@@ -29,6 +30,20 @@ class User(models.Model):
             return self.token
         else:
             return None
+
+    def add_commented(self, comment):
+        commented = self.commented.split(',')
+        commented.append(str(comment.id))
+        commented = ','.join(commented)
+        self.commented = commented
+        self.save()
+
+    def get_commented(self):
+        commented = [int(i) for i in self.commented.split(',')]
+        commented = Comment.objects.filter(id__in=commented)
+        commented = [i.to_dict() for i in commented]
+        return commented
+
 
     def __str__(self):
         return self.name
@@ -117,6 +132,43 @@ class FistProcedure(models.Model):
         self.likers = ','.join([str(i) for i in likers])
         return flag
 
+    def comment(self, data):
+        context = {'message': "未知错误", 'status': 1}
+        try:
+            title = data.get("title")
+            content = data.get("content")
+            context["message"] = "可盈利性未填写"
+            profitable = float(data.get("profitable"))
+            context["message"] = "市场前景"
+            future_proof = float(data.get("future_proof"))
+            context["message"] = "市场化程度"
+            market = float(data.get("market"))
+            context["message"] = "品牌影响"
+            branding = float(data.get("branding"))
+            context["message"] = "没有该用户"
+            user = data.get("token")
+            user = User.objects.get(token=user)
+            context["message"] = "评论创建失败"
+            comment = Comment(
+                title=title,
+                content=content,
+                profitable=profitable,
+                future_proof=future_proof,
+                market=market,
+                branding=branding,
+                user=user,
+                procedure=self
+            )
+            comment.save()
+            user.add_commented(comment)
+            context["message"] = "评论成功"
+            context["status"] = 0
+        except:
+            pass
+        return context
+
+
+
     def to_dict(self):
         return {
             "name": self.name,
@@ -156,7 +208,7 @@ class Comment(models.Model):
     def to_dict(self):
         return {
             "user": self.user.name,
-            "procedure": self.procedure.name,
+            "procedure": self.procedure.id,
             "title": self.title,
             "content": self.content,
             "time": str(self.time),
