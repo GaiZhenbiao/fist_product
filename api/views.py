@@ -135,10 +135,10 @@ def handle_get_all_products(request):
 
 def handle_delete_product(request):
     context = {"message": "未知错误", "status": 1}
-    id = request.POST.get("id")
     try:
         context["message"] = "没有该商品"
-        product = Product.objects.get(pk=id)
+        id = request.POST.get("id")
+        product = Product.objects.get(pk=int(id))
         product.delete()
         context["message"] = "删除成功"
         context["status"] = 0
