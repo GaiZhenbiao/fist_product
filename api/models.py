@@ -39,7 +39,10 @@ class User(models.Model):
         self.save()
 
     def get_commented(self):
-        commented = [int(i) for i in self.commented.split(',')]
+        if self.commented:
+            commented = [int(i) for i in self.commented.split(',')]
+        else:
+            commented = []
         commented = Comment.objects.filter(id__in=commented)
         commented = [i.to_dict() for i in commented]
         return commented
